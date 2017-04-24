@@ -35,6 +35,14 @@ func main() {
 		files = append([]string{args[a]}, files...)
 	}
 
+	{
+		stat, _ := os.Stdin.Stat()
+		isTTY := (stat.Mode() & os.ModeCharDevice) != 0
+		if len(files) == 0 || !isTTY {
+			files = append(files, "")
+		}
+	}
+
 	//
 
 	cmd := exec.Command(jq, args[:a]...)
@@ -58,10 +66,21 @@ func main() {
 
 	for _, arg := range files {
 		out := map[string]interface{}{}
-		file, err := ioutil.ReadFile(arg)
-		if err != nil {
-			log.Println("reading", arg, err)
-			continue
+		var file []byte
+		if arg == "" {
+			in, err := ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				log.Println("reading", "stdin", err)
+				continue
+			}
+			file = in
+		} else {
+			in, err := ioutil.ReadFile(arg)
+			if err != nil {
+				log.Println("reading", arg, err)
+				continue
+			}
+			file = in
 		}
 		err = yaml.Unmarshal(file, &out)
 		if err != nil {
@@ -89,11 +108,13 @@ func main() {
 	yout := map[string]interface{}{}
 	err = json.Unmarshal(jout, &yout)
 	if err != nil {
+		fmt.Printf("%s\n", jout)
 		log.Fatal(err)
 	}
 
 	out, err := yaml.Marshal(yout)
 	if err != nil {
+		fmt.Printf("%s\n", jout)
 		log.Fatal(err)
 	}
 
