@@ -77,10 +77,14 @@ func main() {
 	}
 	close(in)
 
+	// Run the command and get the json output
+
 	jout, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Fatal(string(jout), err)
 	}
+
+	// Convert the jq output back to yaml
 
 	yout := map[string]interface{}{}
 	err = json.Unmarshal(jout, &yout)
