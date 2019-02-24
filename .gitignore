@@ -6,6 +6,8 @@
 !LICENSE
 !Dockerfile
 !Makefile
+!go.mod
+!go.sum
 !*.md
 !*.go
-!*.yml
+!examples/

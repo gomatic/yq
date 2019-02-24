@@ -1,0 +1,8 @@
+Name: yq
+Deployment: master
+App: gomatic
+Repo: registry.gomatic.systems
+BasePort: 101
+Items:
+- Name: one
+- Name: two
