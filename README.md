@@ -1,5 +1,7 @@
 # yq
 
+[![Build Status](https://travis-ci.org/gomatic/yq.svg?branch=master)](https://travis-ci.org/gomatic/yq)
+
 YAML wrapper for the fantastic [`jq`](https://stedolan.github.io/jq/) tool.
 
     go get github.com/gomatic/yq
@@ -9,7 +11,7 @@ YAML wrapper for the fantastic [`jq`](https://stedolan.github.io/jq/) tool.
     yq [options...] filter -- [files...]
     
 Notice the `--`. It's mandatory so `yq` can distinguish the files from the options and filter.
-It also allows `yq` to determine that input is coming from stdin (when stdin is a terminal).
+It also allows `yq` to determine that input is coming from stdin.
 
 # issues
 
