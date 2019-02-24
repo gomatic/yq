@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+cd $(cd $(dirname ${0}) >/dev/null 2>&1; pwd)/../release/dist
+
+for r in *_amd64/*; do
+	n=$(basename ${r})
+	b=${n%.*}
+	e=${n#${b}}
+	i=$(dirname ${r})
+	mv ${r} ${b}_${i}${e} && rmdir ${i}
+done
