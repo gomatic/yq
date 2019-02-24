@@ -14,6 +14,8 @@ import (
 //
 var tag, version = "0.1", "0"
 
+var debugging = os.Getenv("DEBUG") != ""
+
 //
 func main() {
 	jq, err := exec.LookPath("jq")
@@ -27,6 +29,10 @@ func main() {
 	files := []string{}
 	args := os.Args[1:]
 	a := len(args) - 1
+	if a < 1 {
+		log.Fatal("usage: yq query -- file...")
+	}
+
 	for ; a > 0; a-- {
 		arg := args[a]
 		if arg == "--" {
@@ -91,6 +97,9 @@ func main() {
 		if err != nil {
 			log.Println("json", arg, err)
 		} else {
+			if (debugging) {
+				log.Println("jq input\n", string(s))
+			}
 			in <- s
 		}
 	}
@@ -100,22 +109,29 @@ func main() {
 
 	jout, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal(string(jout), err)
+		log.Println(string(jout), err)
+		os.Exit(4)
+	}
+
+	if (debugging) {
+		log.Println("jq output\n", string(jout))
 	}
 
 	// Convert the jq output back to yaml
 
-	yout := map[string]interface{}{}
+	var yout interface{}
 	err = json.Unmarshal(jout, &yout)
 	if err != nil {
-		fmt.Printf("%s\n", jout)
-		log.Fatal(err)
+		fmt.Println(string(jout))
+		log.Println(err)
+		os.Exit(3)
 	}
 
 	out, err := yaml.Marshal(yout)
 	if err != nil {
-		fmt.Printf("%s\n", jout)
-		log.Fatal(err)
+		fmt.Println(string(jout))
+		log.Println(err)
+		os.Exit(2)
 	}
 
 	fmt.Printf("%s\n", out)
@@ -126,19 +142,22 @@ func fix(out map[string]interface{}) map[string]interface{} {
 	var fixs func(out []interface{}) []interface{}
 	var fixm func(out map[interface{}]interface{}) map[string]interface{}
 
+	assign := func(i string, v interface{}, fixed map[string]interface{}) {
+		switch w := v.(type) {
+		case []interface{}:
+			fixed[i] = fixs(w)
+		case map[interface{}]interface{}:
+			fixed[i] = fixm(w)
+		default:
+			fixed[i] = w
+		}
+	}
+
 	// fix map keys
 	fixm = func(out map[interface{}]interface{}) map[string]interface{} {
 		fixed := map[string]interface{}{}
 		for k, v := range out {
-			k := fmt.Sprintf("%v", k)
-			switch w := v.(type) {
-			case []interface{}:
-				fixed[k] = fixs(w)
-			case map[interface{}]interface{}:
-				fixed[k] = fixm(w)
-			default:
-				fixed[k] = w
-			}
+			assign(fmt.Sprintf("%v", k), v, fixed)
 		}
 		return fixed
 	}
@@ -162,14 +181,7 @@ func fix(out map[string]interface{}) map[string]interface{} {
 
 	fixed := map[string]interface{}{}
 	for k, v := range out {
-		switch w := v.(type) {
-		case []interface{}:
-			fixed[k] = fixs(w)
-		case map[interface{}]interface{}:
-			fixed[k] = fixm(w)
-		default:
-			fixed[k] = w
-		}
+		assign(k, v, fixed)
 	}
 	return fixed
 }
